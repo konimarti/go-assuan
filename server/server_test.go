@@ -68,6 +68,7 @@ func TestHandleCmd(t *testing.T) {
 	t.Run("HELP cmd", helpTest)
 	t.Run("OPTION cmd", optionsTest)
 	t.Run("custom cmd", customCmdTest)
+	t.Run("state handling", stateTest)
 }
 
 func helpTest(t *testing.T) {
@@ -85,7 +86,7 @@ func helpTest(t *testing.T) {
 				continue
 			}
 			if !strings.HasPrefix(line, "#") && line != "OK" {
-				t.Error("Response contains non-comment lines other than OK:", "'" + line + "'")
+				t.Error("Response contains non-comment lines other than OK:", "'"+line+"'")
 				t.Error(buf.String())
 				t.FailNow()
 			}
@@ -218,6 +219,35 @@ func optionsTest(t *testing.T) {
 
 		if key != "a" || val != "2" {
 			t.Errorf("Mismatched key-value: wanted %s/%s, got %s/%s", "a", "2", key, val)
+		}
+	})
+}
+
+func stateTest(t *testing.T) {
+	t.Run("test state use", func(t *testing.T) {
+		buf := bytes.Buffer{}
+		pipe := common.NewPipe(nil, &buf)
+
+		type localState struct {
+			s string
+		}
+		state := localState{s: ""}
+
+		proto := ProtoInfo{}
+		proto.SetOption = func(state interface{}, k, v string) error {
+			if k == "setinfo" {
+				state.(*localState).s = v
+			}
+			return nil
+		}
+
+		if err := handleCmd(&pipe, "OPTION", "setinfo info", proto, &state); err != nil {
+			t.Error("Unexpected handleCmd error:", err)
+			t.FailNow()
+		}
+
+		if state.s != "info" {
+			t.Error("state is not correct set")
 		}
 	})
 }

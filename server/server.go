@@ -71,13 +71,13 @@ func Serve(stream io.ReadWriter, proto ProtoInfo) error {
 			return err
 		}
 
-		if err := handleCmd(&pipe, cmd, params, proto, &state); err != nil {
+		if err := handleCmd(&pipe, cmd, params, proto, state); err != nil {
 			return err
 		}
 	}
 }
 
-func handleCmd(pipe *common.Pipe, cmd string, params string, proto ProtoInfo, state *interface{}) error {
+func handleCmd(pipe *common.Pipe, cmd string, params string, proto ProtoInfo, state interface{}) error {
 	switch cmd {
 	case "BYE":
 		if err := pipe.WriteLine("OK", ""); err != nil {
